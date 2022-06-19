@@ -8,40 +8,22 @@ MAX_INT = sys.maxsize
 
 
 def main():
-    # vertices = input_vertices()
-    # edges = input_edges(vertices)
-    vertices = ['A', 'B', 'C', 'D']
+    vertices = input_vertices()
+    edges = input_edges(vertices)
 
-    edges = [ Edge('AD', '1'),
-              Edge('BC', '2'),
-              Edge('AB', '3'),
-              Edge('DB', '4')
-            ]
-
-    mst = []
-    available_vertices = vertices[1]
-    available_edges = get_edges_from_vertices(edges, available_vertices)
-    while len(available_vertices) != len(vertices):
-        available_edges = get_edges_from_vertices(edges, available_vertices)
-
-        min_edge_len = MAX_INT
-        min_edge = None
-
-        for edge in available_edges:
-            length = edge.get_length()
-            if length < min_edge_len:
-                min_edge_len = length
-                min_edge = edge
-
-        mst.append(min_edge)
-        available_vertices = get_vertices_from_edges(mst)
-        D(available_vertices)
+    mst = MST(vertices, edges).generate_list_of_edges()
+    
+    print('\n\nMST:', end=' ')
+    print_edges(mst)
+    print()
 
 
 def input_vertices():
     inp_vertices = input('Please input vertices (A-Z): ')
     vertices = get_list_of_vertices_from_string(inp_vertices)
     vertices = eliminate_duplicates_from_list(vertices)
+
+    print('\nEntered vertices:', end=' ')
     print_vertices(vertices)
     return vertices
 
@@ -66,7 +48,6 @@ def eliminate_duplicates_from_list(list_):
 
 
 def print_vertices(vertices):
-    print('\nEntered vertices:', end=' ')
     vertices.sort()
     for vertex in vertices:
         print(vertex, end=' ')
@@ -110,6 +91,7 @@ def input_edges(vertices):
 
         edges.append(edge)
 
+    print('\nEntered edges:', end=' ')
     print_edges(edges)
     return edges
 
@@ -124,7 +106,6 @@ def edge_is_duplicate(edge_name, existing_edges):
 
 
 def print_edges(edges):
-    print('\nEntered edges:', end=' ')
     for edge in edges:
         name = edge.get_name()
         length = edge.get_length()
@@ -149,6 +130,7 @@ def get_vertices_from_edges(edges):
         vertices.append(edge_vertices[1])
     vertices = eliminate_duplicates_from_list(vertices)
     return vertices
+
 
 class Vertex():
     def __init__(self, name):
@@ -238,7 +220,31 @@ class Edge():
 
 # NOTE: MST stands for Minimum Spanning Tree.
 class MST():
-    pass
+    def __init__(self, vertices, edges):
+        self.vertices = vertices
+        self.edges = edges
+
+
+    def generate_list_of_edges(self):
+        mst = []
+        available_vertices = self.vertices[0]
+        while len(available_vertices) != len(self.vertices):
+            available_edges = get_edges_from_vertices(self.edges, available_vertices)
+
+            min_edge_len = MAX_INT
+            min_edge = None
+
+            for edge in available_edges:
+                if edge in mst:
+                    continue
+                length = edge.get_length()
+                if length < min_edge_len:
+                    min_edge_len = length
+                    min_edge = edge
+
+            mst.append(min_edge)
+            available_vertices = get_vertices_from_edges(mst)
+        return mst
 
 
 if __name__ == '__main__':
