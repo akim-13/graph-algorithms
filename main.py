@@ -8,8 +8,34 @@ MAX_INT = sys.maxsize
 
 
 def main():
-    vertices = input_vertices()
-    edges = input_edges(vertices)
+    # vertices = input_vertices()
+    # edges = input_edges(vertices)
+    vertices = ['A', 'B', 'C', 'D']
+
+    edges = [ Edge('AD', '1'),
+              Edge('BC', '2'),
+              Edge('AB', '3'),
+              Edge('DB', '4')
+            ]
+
+    mst = []
+    available_vertices = vertices[1]
+    available_edges = get_edges_from_vertices(edges, available_vertices)
+    while len(available_vertices) != len(vertices):
+        available_edges = get_edges_from_vertices(edges, available_vertices)
+
+        min_edge_len = MAX_INT
+        min_edge = None
+
+        for edge in available_edges:
+            length = edge.get_length()
+            if length < min_edge_len:
+                min_edge_len = length
+                min_edge = edge
+
+        mst.append(min_edge)
+        available_vertices = get_vertices_from_edges(mst)
+        D(available_vertices)
 
 
 def input_vertices():
@@ -105,6 +131,25 @@ def print_edges(edges):
         print(f'[{name}]={length}', end=' ')
 
 
+def get_edges_from_vertices(edges, vertices):
+    available_edges = []
+    for vertex in vertices:
+        for edge in edges:
+            edge_vertices = edge.get_vertices()
+            if vertex == edge_vertices[0] or vertex == edge_vertices[1]:
+                available_edges.append(edge)
+    return available_edges
+
+
+def get_vertices_from_edges(edges):
+    vertices = []
+    for edge in edges:
+        edge_vertices = edge.get_vertices()
+        vertices.append(edge_vertices[0])
+        vertices.append(edge_vertices[1])
+    vertices = eliminate_duplicates_from_list(vertices)
+    return vertices
+
 class Vertex():
     def __init__(self, name):
         self.name = str(name)
@@ -148,7 +193,7 @@ class Edge():
 
     def get_length(self):
         if self.length_is_valid():
-            return self.length
+            return int(self.length)
         else:
             raise ValueError(f'Invalid edge length "{self.length}".')
 
@@ -189,6 +234,11 @@ class Edge():
             return True
         else:
             return False
+
+
+# NOTE: MST stands for Minimum Spanning Tree.
+class MST():
+    pass
 
 
 if __name__ == '__main__':
