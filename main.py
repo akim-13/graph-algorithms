@@ -8,10 +8,25 @@ MAX_INT = sys.maxsize
 
 
 def main():
-    vertices = input_vertices()
-    edges = input_edges(vertices)
+    # vertices = input_vertices()
+    # edges = input_edges(vertices)
 
-    mst = MST(vertices, edges).generate_list_of_edges()
+    vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+    edges = [
+        Edge('AB', '7'),
+        Edge('BC', '8'),
+        Edge('AD', '5'),
+        Edge('DB', '9'),
+        Edge('BE', '7'),
+        Edge('EC', '5'),
+        Edge('DF', '6'),
+        Edge('FE', '8'),
+        Edge('EG', '9'),
+        Edge('DE', '15'),
+        Edge('FG', '11')
+    ]
+
+    mst = MST(vertices, edges).generate_using_prims_algorithm()
     
     print('\n\nMST:', end=' ')
     print_edges(mst)
@@ -225,7 +240,7 @@ class MST():
         self.edges = edges
 
 
-    def generate_list_of_edges(self):
+    def generate_using_prims_algorithm(self):
         mst = []
         available_vertices = self.vertices[0]
         while len(available_vertices) != len(self.vertices):
@@ -235,8 +250,11 @@ class MST():
             min_edge = None
 
             for edge in available_edges:
-                if edge in mst:
+                edge_vertices = get_vertices_from_edges([edge])
+                forms_a_loop = (edge_vertices[0] in available_vertices) and (edge_vertices[1] in available_vertices)
+                if edge in mst or forms_a_loop:
                     continue
+                 
                 length = edge.get_length()
                 if length < min_edge_len:
                     min_edge_len = length
