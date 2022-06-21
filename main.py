@@ -11,21 +11,38 @@ def main():
     # vertices = input_vertices()
     # edges = input_edges(vertices)
 
-    vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+    # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQL29F6ecFDdMxNje3xl6kiminWfcoAlEKrum4_Iv1A4_qqrXs%26s&sp=1655735612Te0cff05481043c27f94400a7547718e74afb92ae81c3886d227543a1bcdc8ad6
+    vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
     edges = [
-        Edge('AB', '7'),
-        Edge('BC', '8'),
-        Edge('AD', '5'),
-        Edge('DB', '9'),
-        Edge('BE', '7'),
-        Edge('EC', '5'),
-        Edge('DF', '6'),
-        Edge('FE', '8'),
-        Edge('EG', '9'),
-        Edge('DE', '15'),
-        Edge('FG', '11')
+        Edge('CE', 3),
+        Edge('AB', 10),
+        Edge('AC', 12),
+        Edge('BC', 9),
+        Edge('BD', 8),
+        Edge('EF', 3),
+        Edge('CF', 1),
+        Edge('DH', 5),
+        Edge('FH', 6),
+        Edge('DG', 8),
+        Edge('GH', 9),
+        Edge('GI', 2),
+        Edge('ED', 7),
+        Edge('IH', 11)
     ]
-
+    
+    # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcRZKvlnjJZ63-gdl9T2Zi6xWTiZF0ZaMUKy3QwhF0robrrzCYR9%26s&sp=1655735612T26396ecb90dccded2c26db96844e3371ad3f47e5aad83a6441c0aa5d4e2279ea
+    # vertices = ['A', 'B', 'C', 'D', 'E']
+    # edges = [
+    #     Edge('AB', 15),
+    #     Edge('AC', 9),
+    #     Edge('CD', 23),
+    #     Edge('DB', 6),
+    #     Edge('AE', 1),
+    #     Edge('BE', 18),
+    #     Edge('CE', 4),
+    #     Edge('DE', 11)
+    # ]
+    
     mst = MST(vertices, edges).generate_using_prims_algorithm()
     
     print('\n\nMST:', end=' ')
@@ -134,6 +151,7 @@ def get_edges_from_vertices(edges, vertices):
             edge_vertices = edge.get_vertices()
             if vertex == edge_vertices[0] or vertex == edge_vertices[1]:
                 available_edges.append(edge)
+    available_edges = eliminate_duplicates_from_list(available_edges)
     return available_edges
 
 
@@ -172,11 +190,7 @@ class Vertex():
 
 class Edge():
     def __init__(self, string, length):
-        try:
-            string = string.upper()
-        except:
-            pass
-        self.name = string
+        self.name = string.upper()
         self.length = length
 
 
@@ -211,7 +225,9 @@ class Edge():
 
 
     def length_is_valid(self):
-        if self.length.isnumeric():
+        length = self.length
+        is_positive_int = type(length) is int and length>0 
+        if is_positive_int or length.isnumeric():
             return True
         else:
             return False
@@ -227,7 +243,7 @@ class Edge():
     def exists(self, vertices):
         vertex_1 = self.get_vertices()[0]
         vertex_2 = self.get_vertices()[1]
-        if (vertex_1 and vertex_2) in vertices:
+        if (vertex_1 in vertices) and (vertex_2 in vertices):
             return True
         else:
             return False
@@ -246,22 +262,22 @@ class MST():
         while len(available_vertices) != len(self.vertices):
             available_edges = get_edges_from_vertices(self.edges, available_vertices)
 
-            min_edge_len = MAX_INT
             min_edge = None
+            min_len = MAX_INT
 
-            for edge in available_edges:
-                edge_vertices = get_vertices_from_edges([edge])
-                forms_a_loop = (edge_vertices[0] in available_vertices) and (edge_vertices[1] in available_vertices)
-                if edge in mst or forms_a_loop:
+            for cur_edge in available_edges:
+                forms_a_loop = cur_edge.exists(available_vertices)
+                if cur_edge in mst or forms_a_loop:
                     continue
-                 
-                length = edge.get_length()
-                if length < min_edge_len:
-                    min_edge_len = length
-                    min_edge = edge
+
+                cur_len = cur_edge.get_length()
+                if cur_len < min_len:
+                    min_len = cur_len
+                    min_edge = cur_edge
 
             mst.append(min_edge)
             available_vertices = get_vertices_from_edges(mst)
+
         return mst
 
 
