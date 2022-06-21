@@ -8,27 +8,27 @@ MAX_INT = sys.maxsize
 
 
 def main():
-    # vertices = input_vertices()
-    # edges = input_edges(vertices)
+    vertices = input_vertices()
+    edges = input_edges(vertices)
 
     # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQL29F6ecFDdMxNje3xl6kiminWfcoAlEKrum4_Iv1A4_qqrXs%26s&sp=1655735612Te0cff05481043c27f94400a7547718e74afb92ae81c3886d227543a1bcdc8ad6
-    vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
-    edges = [
-        Edge('CE', 3),
-        Edge('AB', 10),
-        Edge('AC', 12),
-        Edge('BC', 9),
-        Edge('BD', 8),
-        Edge('EF', 3),
-        Edge('CF', 1),
-        Edge('DH', 5),
-        Edge('FH', 6),
-        Edge('DG', 8),
-        Edge('GH', 9),
-        Edge('GI', 2),
-        Edge('ED', 7),
-        Edge('IH', 11)
-    ]
+    # vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+    # edges = [
+    #     Edge('CE', 3),
+    #     Edge('AB', 10),
+    #     Edge('AC', 12),
+    #     Edge('BC', 9),
+    #     Edge('BD', 8),
+    #     Edge('EF', 3),
+    #     Edge('CF', 1),
+    #     Edge('DH', 5),
+    #     Edge('FH', 6),
+    #     Edge('DG', 8),
+    #     Edge('GH', 9),
+    #     Edge('GI', 2),
+    #     Edge('ED', 7),
+    #     Edge('IH', 11)
+    # ]
     
     # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcRZKvlnjJZ63-gdl9T2Zi6xWTiZF0ZaMUKy3QwhF0robrrzCYR9%26s&sp=1655735612T26396ecb90dccded2c26db96844e3371ad3f47e5aad83a6441c0aa5d4e2279ea
     # vertices = ['A', 'B', 'C', 'D', 'E']
@@ -254,31 +254,43 @@ class MST():
     def __init__(self, vertices, edges):
         self.vertices = vertices
         self.edges = edges
+        self.mst = []
 
 
     def generate_using_prims_algorithm(self):
-        mst = []
         available_vertices = self.vertices[0]
-        while len(available_vertices) != len(self.vertices):
+        all_vertices_added = False
+        while not all_vertices_added:
             available_edges = get_edges_from_vertices(self.edges, available_vertices)
+            
+            min_edge = self.__find_min_edge(available_vertices, available_edges)
 
-            min_edge = None
-            min_len = MAX_INT
+            # NOTE: Handles a special case when there is only one entered edge.
+            if min_edge is None:
+                break
 
-            for cur_edge in available_edges:
-                forms_a_loop = cur_edge.exists(available_vertices)
-                if cur_edge in mst or forms_a_loop:
-                    continue
+            self.mst.append(min_edge)
+            available_vertices = get_vertices_from_edges(self.mst)
+            all_vertices_added = len(available_vertices)==len(self.vertices)
 
-                cur_len = cur_edge.get_length()
-                if cur_len < min_len:
-                    min_len = cur_len
-                    min_edge = cur_edge
+        return self.mst
 
-            mst.append(min_edge)
-            available_vertices = get_vertices_from_edges(mst)
+    def __find_min_edge(self, available_vertices, available_edges):
+        min_edge = None
+        min_len = MAX_INT
 
-        return mst
+        for cur_edge in available_edges:
+            forms_a_loop = cur_edge.exists(available_vertices)
+            if cur_edge in self.mst or forms_a_loop:
+                continue
+
+            # FIXME: Sometimes breaks because of None.
+            cur_len = cur_edge.get_length()
+            if cur_len < min_len:
+                min_len = cur_len
+                min_edge = cur_edge
+
+        return min_edge
 
 
 if __name__ == '__main__':
