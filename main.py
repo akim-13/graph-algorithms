@@ -8,8 +8,8 @@ MAX_INT = sys.maxsize
 
 
 def main():
-    vertices = input_vertices()
-    edges = input_edges(vertices)
+    # vertices = input_vertices()
+    # edges = input_edges(vertices)
 
     # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQL29F6ecFDdMxNje3xl6kiminWfcoAlEKrum4_Iv1A4_qqrXs%26s&sp=1655735612Te0cff05481043c27f94400a7547718e74afb92ae81c3886d227543a1bcdc8ad6
     # vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
@@ -31,22 +31,26 @@ def main():
     # ]
     
     # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcRZKvlnjJZ63-gdl9T2Zi6xWTiZF0ZaMUKy3QwhF0robrrzCYR9%26s&sp=1655735612T26396ecb90dccded2c26db96844e3371ad3f47e5aad83a6441c0aa5d4e2279ea
-    # vertices = ['A', 'B', 'C', 'D', 'E']
-    # edges = [
-    #     Edge('AB', 15),
-    #     Edge('AC', 9),
-    #     Edge('CD', 23),
-    #     Edge('DB', 6),
-    #     Edge('AE', 1),
-    #     Edge('BE', 18),
-    #     Edge('CE', 4),
-    #     Edge('DE', 11)
-    # ]
+    vertices = ['A', 'B', 'C', 'D', 'E']
+    edges = [
+        Edge('AB', 15),
+        Edge('AC', 9),
+        Edge('CD', 23),
+        Edge('DB', 6),
+        Edge('AE', 1),
+        Edge('BE', 18),
+        Edge('CE', 4),
+        Edge('DE', 11)
+    ]
     
-    mst = MST(vertices, edges).generate_using_prims_algorithm()
+    mst_prims = MST(vertices, edges).generate_using_prims_algorithm()
+    mst_kruskals = MST(vertices, edges).generate_using_kruskals_algorithm()
     
-    print('\n\nMST:', end=' ')
-    print_edges(mst)
+    print("\n\nPrim's MST:", end=' ')
+    print_edges(mst_prims)
+    print()
+    print("\n\nKruskal's MST:", end=' ')
+    print_edges(mst_kruskals)
     print()
 
 
@@ -275,22 +279,62 @@ class MST():
 
         return self.mst
 
-    def __find_min_edge(self, available_vertices, available_edges):
+
+    def __find_min_edge(self, vertices, edges):
         min_edge = None
         min_len = MAX_INT
 
-        for cur_edge in available_edges:
-            forms_a_loop = cur_edge.exists(available_vertices)
+        for cur_edge in edges:
+            forms_a_loop = cur_edge.exists(vertices)
             if cur_edge in self.mst or forms_a_loop:
                 continue
 
-            # FIXME: Sometimes breaks because of None.
             cur_len = cur_edge.get_length()
             if cur_len < min_len:
                 min_len = cur_len
                 min_edge = cur_edge
 
         return min_edge
+
+
+    def generate_using_kruskals_algorithm(self):
+        available_edges = self.edges
+        all_edges_included = False
+        trees = []
+        while not all_edges_included:
+
+            min_edge = None
+            min_len = MAX_INT
+
+            for cur_edge in available_edges:
+                for tree in trees:
+                    mst_vertices = []
+                    for mst_edge in trees:
+                        for vertex in mst_edge.get_vertices():
+                            mst_vertices.append(vertex)
+                    mst_vertices = eliminate_duplicates_from_list(mst_vertices)
+
+                    forms_a_loop = cur_edge.exists(mst_vertices)
+                    if cur_edge in tree or forms_a_loop:
+                        continue
+
+                    cur_len = cur_edge.get_length()
+                    if cur_len < min_len:
+                        min_len = cur_len
+                        min_edge = cur_edge
+                trees.append(min_edge)
+
+            self.mst.append(min_edge)
+            try:
+                for i, edge in enumerate(available_edges):
+                    if edge.get_name() == min_edge.get_name():
+                        available_edges.pop(i)
+            except:
+                pass
+
+            all_edges_included = len(self.mst)==len(self.vertices)-1
+
+        return self.mst
 
 
 if __name__ == '__main__':
