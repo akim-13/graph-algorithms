@@ -1,11 +1,9 @@
 import sys
 import logging
 from logging import debug as D
-
-logging.basicConfig(level = logging.DEBUG, format = '[%(levelname)s] -----> [%(lineno)s]: %(msg)s')
+import pretty_errors
 
 MAX_INT = sys.maxsize
-
 
 def main():
     # vertices = input_vertices()
@@ -29,7 +27,6 @@ def main():
     #     Edge('ED', 7),
     #     Edge('IH', 11)
     # ]
-    
     # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcRZKvlnjJZ63-gdl9T2Zi6xWTiZF0ZaMUKy3QwhF0robrrzCYR9%26s&sp=1655735612T26396ecb90dccded2c26db96844e3371ad3f47e5aad83a6441c0aa5d4e2279ea
     vertices = ['A', 'B', 'C', 'D', 'E']
     edges = [
@@ -43,12 +40,12 @@ def main():
         Edge('DE', 11)
     ]
     
-    mst_prims = MST(vertices, edges).generate_using_prims_algorithm()
+    # mst_prims = MST(vertices, edges).generate_using_prims_algorithm()
     mst_kruskals = MST(vertices, edges).generate_using_kruskals_algorithm()
     
-    print("\n\nPrim's MST:", end=' ')
-    print_edges(mst_prims)
-    print()
+    # print("\n\nPrim's MST:", end=' ')
+    # print_edges(mst_prims)
+    # print()
     print("\n\nKruskal's MST:", end=' ')
     print_edges(mst_kruskals)
     print()
@@ -299,43 +296,77 @@ class MST():
 
     def generate_using_kruskals_algorithm(self):
         available_edges = self.edges
-        all_edges_included = False
-        trees = []
-        while not all_edges_included:
-
+        self.mst.append(self.__find_min_edge(self.vertices[0-1], self.edges))
+        list_of_msts = []
+        while len(available_edges) > 1:
             min_edge = None
             min_len = MAX_INT
 
             for cur_edge in available_edges:
-                for tree in trees:
-                    mst_vertices = []
-                    for mst_edge in trees:
-                        for vertex in mst_edge.get_vertices():
-                            mst_vertices.append(vertex)
-                    mst_vertices = eliminate_duplicates_from_list(mst_vertices)
 
-                    forms_a_loop = cur_edge.exists(mst_vertices)
-                    if cur_edge in tree or forms_a_loop:
-                        continue
+                if cur_edge in self.mst:
+                    continue
 
-                    cur_len = cur_edge.get_length()
-                    if cur_len < min_len:
-                        min_len = cur_len
-                        min_edge = cur_edge
-                trees.append(min_edge)
+                cur_len = cur_edge.get_length()
+                if cur_len < min_len:
+                    min_len = cur_len
+                    min_edge = cur_edge
 
-            self.mst.append(min_edge)
-            try:
-                for i, edge in enumerate(available_edges):
-                    if edge.get_name() == min_edge.get_name():
-                        available_edges.pop(i)
-            except:
-                pass
+            mst_vertices = [ mst_edge.get_vertices() for mst_edge in self.mst ]
 
-            all_edges_included = len(self.mst)==len(self.vertices)-1
+            #1: Min edge is already a part of MST.
+            if min_edge is None or min_edge.exists(mst_vertices):
+                continue
+
+            min_edge_vertex_1 = min_edge.get_vertices()[0]
+            min_edge_vertex_2 = min_edge.get_vertices()[1]
+
+            for cur_mst in list_of_msts:
+                if cur_mst is None:
+                    continue
+
+                cur_mst_vertices = [ cur_mst_edge.get_vertices() for cur_mst_edge in cur_mst ]
+
+                for cur_mst_edge in cur_mst:
+                    vertices_of_cur_mst_edge = cur_mst_edge.get_vertices()
+                    has_first_vertex = min_edge_vertex_1 in vertices_of_cur_mst_edge 
+                    has_second_vertex = min_edge_vertex_2 in vertices_of_cur_mst_edge
+                    min_edge_is_part_of_cur_mst = (has_first_vertex) or (has_second_vertex)
+                    already_exists_or_forms_a_loop = min_edge.exists(cur_mst_vertices)
+
+                    #2: Min edge belongs to one of the MSTs in list_of_msts.
+                    if min_edge_is_part_of_cur_mst and not already_exists_or_forms_a_loop:
+                        cur_mst.append(min_edge)
+                    else:
+                        new_mst = [ min_edge ]
+                        list_of_msts.append(new_mst)
+
+                list_of_msts.append(cur_mst)
+
+            self.mst.append(list_of_msts)
+            available_edges.remove(min_edge)
+
 
         return self.mst
 
 
 if __name__ == '__main__':
+    pretty_errors.configure(
+        lines_before         = 10,
+        separator_character  = '',
+        line_number_first    = True,
+        display_locals       = True,
+        display_trace_locals = True,
+        filename_color       = pretty_errors.CYAN,
+        code_color           = pretty_errors.WHITE,
+        exception_arg_color  = pretty_errors.YELLOW,
+        local_name_color     = pretty_errors.BLUE,
+        function_color       = pretty_errors.BRIGHT_GREEN,
+        line_number_color    = pretty_errors.BRIGHT_YELLOW,
+        line_color           = pretty_errors.RED + '> ' + pretty_errors.default_config.local_value_color,
+        infix = '────────────────────────────────────────────────────────────────────────────────'
+    )
+
+    logging.basicConfig(level = logging.DEBUG, format = '[%(levelname)s] -----> [%(lineno)s]: %(msg)s')
+
     main()
