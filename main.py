@@ -303,7 +303,7 @@ class MST():
             min_len = MAX_INT
 
             for cur_edge in available_edges:
-
+                #1: Already in self.mst.
                 if cur_edge in self.mst:
                     continue
 
@@ -312,42 +312,102 @@ class MST():
                     min_len = cur_len
                     min_edge = cur_edge
 
-            mst_vertices = [ mst_edge.get_vertices() for mst_edge in self.mst ]
+            if available_edges == self.edges:
+                # NOTE: It's the 2nd min_edge.
+                list_of_msts.append([min_edge])
+                # FIXME: The last line of the while cycle, which removes min_edge 
+                # from available_edges, isn't executed because of continue, 
+                # resulting in an infinite cycle.
+                continue
 
-            #1: Min edge is already a part of MST.
+            mst_vertices = self.__get_vertices_from_mst(self.mst)
+            set_mst_vertices = set(mst_vertices)
+
+            #2: Forms a cycle in self.mst.
             if min_edge is None or min_edge.exists(mst_vertices):
                 continue
 
-            min_edge_vertex_1 = min_edge.get_vertices()[0]
-            min_edge_vertex_2 = min_edge.get_vertices()[1]
+            min_edge_vertices = min_edge.get_vertices()
+            set_min_edge_vertices = set(min_edge_vertices)
 
-            for cur_mst in list_of_msts:
-                if cur_mst is None:
+            for i_cur_mst in list_of_msts:
+                if i_cur_mst is None:
                     continue
 
-                cur_mst_vertices = [ cur_mst_edge.get_vertices() for cur_mst_edge in cur_mst ]
+                # NOTE: list_of_msts will remain unchanged.
+                list_of_msts.remove(i_cur_mst)
 
-                for cur_mst_edge in cur_mst:
-                    vertices_of_cur_mst_edge = cur_mst_edge.get_vertices()
-                    has_first_vertex = min_edge_vertex_1 in vertices_of_cur_mst_edge 
-                    has_second_vertex = min_edge_vertex_2 in vertices_of_cur_mst_edge
-                    min_edge_is_part_of_cur_mst = (has_first_vertex) or (has_second_vertex)
-                    already_exists_or_forms_a_loop = min_edge.exists(cur_mst_vertices)
+                i_cur_mst_vertices = self.__get_vertices_from_mst(i_cur_mst)
+                set_i_cur_mst_vertices = set(i_cur_mst_vertices)
 
-                    #2: Min edge belongs to one of the MSTs in list_of_msts.
-                    if min_edge_is_part_of_cur_mst and not already_exists_or_forms_a_loop:
-                        cur_mst.append(min_edge)
-                    else:
-                        new_mst = [ min_edge ]
-                        list_of_msts.append(new_mst)
+                doesnt_belong_to_an_mst = len(set_min_edge_vertices & set_i_cur_mst_vertices)==0
+                doesnt_belong_to_self_mst = len(set_min_edge_vertices & set_mst_vertices)==0
 
-                list_of_msts.append(cur_mst)
 
-            self.mst.append(list_of_msts)
+                D(f'{min_edge.exists(min_edge_vertices + mst_vertices)}')
+                D(f'{doesnt_belong_to_an_mst}')
+
+
+                #3 & #4: Already in an MST or forms a cycle in an MST.
+                if min_edge.exists(i_cur_mst_vertices):
+                    continue
+
+                #5: Connects an MST and self.mst.
+                elif min_edge.exists(i_cur_mst_vertices + mst_vertices):
+                    i_cur_mst.append(min_edge)
+                    for edge in i_cur_mst:
+                        self.mst.append(edge)
+                    continue
+
+                #6: Belongs to self.mst and doesn't belong to any other MSTs.
+                elif min_edge.exists(min_edge_vertices + mst_vertices) and doesnt_belong_to_an_mst:
+                    self.mst.append(min_edge)
+                    continue
+
+                #7: Belongs to an MST and doesn't belong to self.mst.
+                elif min_edge.exists(min_edge_vertices + i_cur_mst_vertices) and doesnt_belong_to_self_mst:
+                    i_cur_mst.append(min_edge)
+                    continue
+
+                connected_two_msts = False
+                for j_cur_mst in list_of_msts:
+                    j_cur_mst_vertices = self.__get_vertices_from_mst(j_cur_mst)
+                    
+                    if min_edge.exists(i_cur_mst_vertices + j_cur_mst_vertices):
+                        connected_two_msts = True
+                        new_mst = []
+                        for i_edge, j_edge in i_cur_mst, j_cur_mst:
+                            new_mst.append(i_edge)
+                            new_mst.append(j_edge)
+                        new_mst.append(min_edge)
+
+                        list_of_msts.append(new_mst)  
+
+                        list_of_msts.remove(i_cur_mst)
+                        list_of_msts.remove(j_cur_mst)
+                        break
+
+                #8: Connects two MSTs but not self.mst.
+                if connected_two_msts:
+                    continue
+
+                #9: Doesn't belong anywhere, i.e. new MST.
+                else:
+                    list_of_msts.append([min_edge])
+
+                # NOTE: list_of_msts remains unchanged.
+                list_of_msts.append(i_cur_mst)
+
             available_edges.remove(min_edge)
 
-
         return self.mst
+
+    @staticmethod
+    def __get_vertices_from_mst(mst):
+        mst_vertices = []
+        for mst_edge in mst:
+            mst_vertices = [ vertex for vertex in mst_edge.get_vertices() ]
+        return mst_vertices
 
 
 if __name__ == '__main__':
