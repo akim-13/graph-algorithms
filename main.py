@@ -10,45 +10,50 @@ def main():
     # edges = input_edges(vertices)
 
     # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQL29F6ecFDdMxNje3xl6kiminWfcoAlEKrum4_Iv1A4_qqrXs%26s&sp=1655735612Te0cff05481043c27f94400a7547718e74afb92ae81c3886d227543a1bcdc8ad6
-    # vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
-    # edges = [
-    #     Edge('CE', 3),
-    #     Edge('AB', 10),
-    #     Edge('AC', 12),
-    #     Edge('BC', 9),
-    #     Edge('BD', 8),
-    #     Edge('EF', 3),
-    #     Edge('CF', 1),
-    #     Edge('DH', 5),
-    #     Edge('FH', 6),
-    #     Edge('DG', 8),
-    #     Edge('GH', 9),
-    #     Edge('GI', 2),
-    #     Edge('ED', 7),
-    #     Edge('IH', 11)
-    # ]
-    # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcRZKvlnjJZ63-gdl9T2Zi6xWTiZF0ZaMUKy3QwhF0robrrzCYR9%26s&sp=1655735612T26396ecb90dccded2c26db96844e3371ad3f47e5aad83a6441c0aa5d4e2279ea
-    vertices = ['A', 'B', 'C', 'D', 'E']
+    vertices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
     edges = [
-        Edge('AB', 15),
-        Edge('AC', 9),
-        Edge('CD', 23),
-        Edge('DB', 6),
-        Edge('AE', 1),
-        Edge('BE', 18),
-        Edge('CE', 4),
-        Edge('DE', 11)
+        Edge('CE', 3),
+        Edge('AB', 10),
+        Edge('AC', 12),
+        Edge('BC', 9),
+        Edge('BD', 8),
+        Edge('EF', 3),
+        Edge('CF', 1),
+        Edge('DH', 5),
+        Edge('FH', 6),
+        Edge('DG', 8),
+        Edge('GH', 9),
+        Edge('GI', 2),
+        Edge('ED', 7),
+        Edge('IH', 11)
     ]
+    # SEE: https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcRZKvlnjJZ63-gdl9T2Zi6xWTiZF0ZaMUKy3QwhF0robrrzCYR9%26s&sp=1655735612T26396ecb90dccded2c26db96844e3371ad3f47e5aad83a6441c0aa5d4e2279ea
+    # vertices = ['A', 'B', 'C', 'D', 'E']
+    # edges = [
+    #     Edge('AB', 15),
+    #     Edge('AC', 9),
+    #     Edge('CD', 23),
+    #     Edge('DB', 6),
+    #     Edge('AE', 1),
+    #     Edge('BE', 18),
+    #     Edge('CE', 4),
+    #     Edge('DE', 11)
+    # ]
     
-    # mst_prims = MST(vertices, edges).generate_using_prims_algorithm()
+    mst_prims = MST(vertices, edges).generate_using_prims_algorithm()
     mst_kruskals = MST(vertices, edges).generate_using_kruskals_algorithm()
+    mst_prims_edges = set([x.get_name() for x in mst_prims])
+    mst_kruskals_edges = set([x.get_name() for x in mst_kruskals])
+
+    intersection = (mst_prims_edges & mst_kruskals_edges) 
     
-    # print("\n\nPrim's MST:", end=' ')
-    # print_edges(mst_prims)
-    # print()
+    print("\n\nPrim's MST:", end=' ')
+    print_edges(mst_prims)
+    print()
     print("\n\nKruskal's MST:", end=' ')
     print_edges(mst_kruskals)
     print()
+    print(f'Intersection: {intersection}\n{len(intersection)} out of {len(mst_prims)} matched.')
 
 
 def input_vertices():
@@ -295,118 +300,126 @@ class MST():
 
 
     def generate_using_kruskals_algorithm(self):
-        available_edges = self.edges
-        self.mst.append(self.__find_min_edge(self.vertices[0-1], self.edges))
-        list_of_msts = []
+        available_edges = self.edges.copy()
+
+        # WARNING: I'm not sure about self.vertices[0], but it always works.
+        first_min_edge = self.__find_min_edge(self.vertices[0], self.edges)
+        self.mst.append(first_min_edge)
+        available_edges.remove(first_min_edge)
+        self.list_of_msts = []
+        
+        # FIXME: Find the proper way to choose a starting edge for list_of_msts.
+        for mst_edge in self.mst:
+            next_min_edge = self.__find_min_edge(self.vertices[0], available_edges)
+            if len(set(next_min_edge.get_vertices()) & set(mst_edge.get_vertices())) == 1 and next_min_edge not in self.mst:
+                self.mst.append(next_min_edge)
+            else:
+                self.list_of_msts.append([next_min_edge])
+
+            available_edges.remove(next_min_edge)
+
         while len(available_edges) > 1:
-            min_edge = None
-            min_len = MAX_INT
+            min_edge = self.__find_and_handle_min_edge(available_edges)
+            available_edges.remove(min_edge)
 
-            for cur_edge in available_edges:
-                #1: Already in self.mst.
-                if cur_edge in self.mst:
-                    continue
+        return self.mst
 
-                cur_len = cur_edge.get_length()
-                if cur_len < min_len:
-                    min_len = cur_len
-                    min_edge = cur_edge
 
-            if available_edges == self.edges:
-                # NOTE: It's the 2nd min_edge.
-                list_of_msts.append([min_edge])
-                # FIXME: The last line of the while cycle, which removes min_edge 
-                # from available_edges, isn't executed because of continue, 
-                # resulting in an infinite cycle.
+    def __find_and_handle_min_edge(self, available_edges):
+        min_edge = None
+        min_len = MAX_INT
+
+        for cur_edge in available_edges:
+            #1: Already in self.mst.
+            if cur_edge in self.mst:
                 continue
 
+            cur_len = cur_edge.get_length()
+            if cur_len < min_len:
+                min_len = cur_len
+                min_edge = cur_edge
+
+        for i_cur_mst in self.list_of_msts:
             mst_vertices = self.__get_vertices_from_mst(self.mst)
             set_mst_vertices = set(mst_vertices)
 
             #2: Forms a cycle in self.mst.
             if min_edge is None or min_edge.exists(mst_vertices):
-                continue
+                return min_edge
 
             min_edge_vertices = min_edge.get_vertices()
             set_min_edge_vertices = set(min_edge_vertices)
 
-            for i_cur_mst in list_of_msts:
-                if i_cur_mst is None:
+            i_cur_mst_vertices = self.__get_vertices_from_mst(i_cur_mst)
+            set_i_cur_mst_vertices = set(i_cur_mst_vertices)
+
+            doesnt_belong_to_an_mst = len(set_min_edge_vertices & set_i_cur_mst_vertices)==0
+            doesnt_belong_to_self_mst = len(set_min_edge_vertices & set_mst_vertices)==0
+
+            # D(f'combined vertices: {min_edge_vertices + mst_vertices}')
+            # D(f'min edge in mst: {min_edge.exists(min_edge_vertices + mst_vertices)}')
+            # D(f'not in an mst: {doesnt_belong_to_an_mst}')
+
+            #3 & #4: Already in an MST or forms a cycle in an MST.
+            if min_edge.exists(i_cur_mst_vertices):
+                return min_edge
+
+            #5: Connects an MST and self.mst.
+            elif min_edge.exists(i_cur_mst_vertices + mst_vertices):
+                i_cur_mst.append(min_edge)
+                for edge in i_cur_mst:
+                    self.mst.append(edge)
+                return min_edge
+
+            #6: Belongs to self.mst and doesn't belong to any other MSTs.
+            elif len(set_min_edge_vertices & set_mst_vertices)==1 and doesnt_belong_to_an_mst:
+                self.mst.append(min_edge)
+                return min_edge
+
+            #7: Belongs to an MST and doesn't belong to self.mst.
+            elif len(set_min_edge_vertices & set_i_cur_mst_vertices)==1 and doesnt_belong_to_self_mst:
+                i_cur_mst.append(min_edge)
+                return min_edge
+
+            connected_two_msts = False
+            for j_cur_mst in self.list_of_msts:
+                if j_cur_mst == i_cur_mst:
                     continue
 
-                # NOTE: list_of_msts will remain unchanged.
-                list_of_msts.remove(i_cur_mst)
+                j_cur_mst_vertices = self.__get_vertices_from_mst(j_cur_mst)
+                
+                if min_edge.exists(i_cur_mst_vertices + j_cur_mst_vertices):
+                    connected_two_msts = True
+                    new_mst = []
+                    for i_edge in i_cur_mst:
+                        new_mst.append(i_edge)
 
-                i_cur_mst_vertices = self.__get_vertices_from_mst(i_cur_mst)
-                set_i_cur_mst_vertices = set(i_cur_mst_vertices)
+                    for j_edge in j_cur_mst:
+                        new_mst.append(j_edge)
 
-                doesnt_belong_to_an_mst = len(set_min_edge_vertices & set_i_cur_mst_vertices)==0
-                doesnt_belong_to_self_mst = len(set_min_edge_vertices & set_mst_vertices)==0
+                    new_mst.append(min_edge)
 
+                    self.list_of_msts.append(new_mst)  
 
-                D(f'{min_edge.exists(min_edge_vertices + mst_vertices)}')
-                D(f'{doesnt_belong_to_an_mst}')
+                    self.list_of_msts.remove(i_cur_mst)
+                    self.list_of_msts.remove(j_cur_mst)
+                    break
 
+            #8: Connects two MSTs but not self.mst.
+            if connected_two_msts:
+                return min_edge
 
-                #3 & #4: Already in an MST or forms a cycle in an MST.
-                if min_edge.exists(i_cur_mst_vertices):
-                    continue
+            #9: Doesn't belong anywhere, i.e. new MST.
+            else:
+                self.list_of_msts.append([min_edge])
+                return min_edge
 
-                #5: Connects an MST and self.mst.
-                elif min_edge.exists(i_cur_mst_vertices + mst_vertices):
-                    i_cur_mst.append(min_edge)
-                    for edge in i_cur_mst:
-                        self.mst.append(edge)
-                    continue
-
-                #6: Belongs to self.mst and doesn't belong to any other MSTs.
-                elif min_edge.exists(min_edge_vertices + mst_vertices) and doesnt_belong_to_an_mst:
-                    self.mst.append(min_edge)
-                    continue
-
-                #7: Belongs to an MST and doesn't belong to self.mst.
-                elif min_edge.exists(min_edge_vertices + i_cur_mst_vertices) and doesnt_belong_to_self_mst:
-                    i_cur_mst.append(min_edge)
-                    continue
-
-                connected_two_msts = False
-                for j_cur_mst in list_of_msts:
-                    j_cur_mst_vertices = self.__get_vertices_from_mst(j_cur_mst)
-                    
-                    if min_edge.exists(i_cur_mst_vertices + j_cur_mst_vertices):
-                        connected_two_msts = True
-                        new_mst = []
-                        for i_edge, j_edge in i_cur_mst, j_cur_mst:
-                            new_mst.append(i_edge)
-                            new_mst.append(j_edge)
-                        new_mst.append(min_edge)
-
-                        list_of_msts.append(new_mst)  
-
-                        list_of_msts.remove(i_cur_mst)
-                        list_of_msts.remove(j_cur_mst)
-                        break
-
-                #8: Connects two MSTs but not self.mst.
-                if connected_two_msts:
-                    continue
-
-                #9: Doesn't belong anywhere, i.e. new MST.
-                else:
-                    list_of_msts.append([min_edge])
-
-                # NOTE: list_of_msts remains unchanged.
-                list_of_msts.append(i_cur_mst)
-
-            available_edges.remove(min_edge)
-
-        return self.mst
 
     @staticmethod
     def __get_vertices_from_mst(mst):
         mst_vertices = []
         for mst_edge in mst:
-            mst_vertices = [ vertex for vertex in mst_edge.get_vertices() ]
+            mst_vertices += [ vertex for vertex in mst_edge.get_vertices() ]
         return mst_vertices
 
 
@@ -417,10 +430,10 @@ if __name__ == '__main__':
         line_number_first    = True,
         display_locals       = True,
         display_trace_locals = True,
+        local_name_color     = pretty_errors.BLUE,
         filename_color       = pretty_errors.CYAN,
         code_color           = pretty_errors.WHITE,
         exception_arg_color  = pretty_errors.YELLOW,
-        local_name_color     = pretty_errors.BLUE,
         function_color       = pretty_errors.BRIGHT_GREEN,
         line_number_color    = pretty_errors.BRIGHT_YELLOW,
         line_color           = pretty_errors.RED + '> ' + pretty_errors.default_config.local_value_color,
